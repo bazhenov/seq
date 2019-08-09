@@ -1,0 +1,9 @@
+[package]
+name = "sq"
+version = "1.0.0"
+authors = ["Denis Bazhenov <bazhenov@farpost.com>"]
+edition = "2018"
+
+[dependencies]
+serde_json = "~1.0"
+clap = "~2"
