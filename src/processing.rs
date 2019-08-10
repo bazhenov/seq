@@ -15,12 +15,8 @@ mod tests {
 	#[test]
 	fn serialize() {
 		let r = Record { text: String::from("Hello"), spans: vec![] };
-		let expected = json!({
-			"text": "Hello",
-			"spans": []
-		});
-
-		let value = serde_json::to_value(r).unwrap();
+		let expected = r#"{"text":"Hello","spans":[]}"#;
+		let value = serde_json::to_string(&r).unwrap();
 		assert_eq!(value, expected);
 	}
 
