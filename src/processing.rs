@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::ops::Range;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Record {
-    text: String,
-    spans: Vec<Range<usize>>,
+    pub text: String,
+    pub spans: Vec<Range<usize>>,
 }
 
 mod tests {
 
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn serialize() {
