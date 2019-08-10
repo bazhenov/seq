@@ -3,7 +3,7 @@ use serde_json::json;
 use std::ops::Range;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct Record {
+pub struct Record {
     text: String,
     spans: Vec<Range<usize>>,
 }

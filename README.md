@@ -10,6 +10,17 @@
 `sq` works with sample in a ndjson format. Suppose you have following file:
 
 ```
+Please send me email to: ask@server.com
+Reply to me@gmaiul.com ASAP
+```
+
+you can import this file in ndjson format:
+
+```
+sq import examples.txt > examples.ndjson 
+```
+
+```
 {"text": "Please send me email to: ask@server.com"}
 {"text": "Reply to me@gmaiul.com ASAP"}
 ```
@@ -17,7 +28,7 @@
 If you want to mark all emails in a dataset, you can run (pardon oversimplified regexp):
 
 ```
-$ sq -f dataset.ndjson mark -l email -r '[a-z0-9]@[a-z0-9\\.]'
+$ sq mark -f dataset.ndjson -l email -r '[a-z0-9]@[a-z0-9\\.]'
 ```
 
 then you will have:
@@ -30,7 +41,7 @@ then you will have:
 Then you can mask given spans from a dataset:
 
 ```
-$ seq -f dataset.ndjson mask -l email -c '*'
+$ seq mask -f dataset.ndjson -l email -c '*'
 "Please send me email to: **************"
 "Reply to ************ ASAP"
 ```
