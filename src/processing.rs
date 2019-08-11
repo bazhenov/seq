@@ -1,10 +1,39 @@
 use serde::{Deserialize, Serialize};
+use std::io::{BufRead, BufReader, Read};
 use std::ops::Range;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Record {
     pub text: String,
     pub spans: Vec<Range<usize>>,
+}
+
+pub struct Records<R> {
+    input: BufReader<R>,
+}
+
+impl<R: Read> Records<R> {
+    pub fn new(input: R) -> Self {
+        Records {
+            input: BufReader::new(input),
+        }
+    }
+}
+
+impl<R: Read> Iterator for Records<R> {
+    type Item = Record;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut line = String::new();
+        match self.input.read_line(&mut line) {
+            Ok(0) => None,
+            Err(e) => panic!("{:?}", e),
+            Ok(_) => match serde_json::from_str(&line) {
+                Ok(result) => Some(result),
+                Err(e) => panic!("{:?}", e),
+            },
+        }
+    }
 }
 
 mod tests {
@@ -35,5 +64,14 @@ mod tests {
         });
         let value: Record = serde_json::from_value(json).unwrap();
         assert_eq!(value, expected)
+    }
+
+    #[test]
+    fn iterate() {
+        let string = r#"{"text": "Hello", "spans": []}"#;
+        let mut records = Records::new(string.as_bytes());
+
+        assert_eq!(records.next().map(|i| i.text), Some(String::from("Hello")));
+        assert_eq!(records.next(), None);
     }
 }

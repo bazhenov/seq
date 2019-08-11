@@ -38,6 +38,12 @@ then you will have:
 {"text": "Reply to me@gmaiul.com ASAP", "annotations": [{"span": [9, 23], "label": "email"}]}
 ```
 
+If you want only print matches:
+
+```
+$ sq print -f examples.ndjson -r '[a-z0-9]@[a-z0-9\\.]'
+```
+
 Then you can mask given spans from a dataset:
 
 ```
