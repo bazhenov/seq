@@ -7,7 +7,7 @@ use processing::{Record, Records};
 use regex::Regex;
 use serde_json;
 use std::fs::File;
-use std::io::{stdout, BufRead, BufReader, Read, Result, Write};
+use std::io::{stdout, BufRead, BufReader, Result, Write};
 
 fn main() -> Result<()> {
     let matches = app().get_matches();
@@ -18,12 +18,13 @@ fn main() -> Result<()> {
     if let Some(matches) = matches.subcommand_matches("import") {
         let input_file_name = matches.value_of("INPUT").unwrap();
         let input_file = File::open(input_file_name)?;
+        let lines = BufReader::new(input_file).lines().filter_map(Result::ok);
 
         if let Some(output_file_name) = matches.value_of("OUTPUT") {
             let output_file = File::create(output_file_name)?;
-            import(input_file, output_file)?;
+            import(lines, output_file)?;
         } else {
-            import(input_file, stdout)?;
+            import(lines, stdout)?;
         }
     } else if let Some(matches) = matches.subcommand_matches("print") {
         let input_file_name = matches.value_of("INPUT").unwrap();
@@ -59,6 +60,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
+/// iterate over records and write to output only matches of given regex
 fn print(records: impl Iterator<Item = Record>, regex: Regex, mut out: impl Write) -> Result<()> {
     for record in records {
         let text = record.text;
@@ -71,11 +73,9 @@ fn print(records: impl Iterator<Item = Record>, regex: Regex, mut out: impl Writ
     Ok(())
 }
 
-/// Reads input line by line and writes it to ouput in Record format
-fn import(input: impl Read, mut out: impl Write) -> Result<()> {
-    let buf = BufReader::new(input);
-
-    for line in buf.lines().filter_map(Result::ok) {
+/// Read over lines and writes to ouput in Record format
+fn import(input: impl Iterator<Item = String>, mut out: impl Write) -> Result<()> {
+    for line in input {
         let record = Record {
             text: line.to_string(),
             spans: vec![],
