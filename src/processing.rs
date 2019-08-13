@@ -12,14 +12,14 @@ pub struct Record {
 }
 
 impl Record {
-    fn new(text: &str) -> Self {
+    pub fn new(text: &str) -> Self {
         Record {
             text: String::from(text),
             spans: vec![],
         }
     }
 
-    fn add_match(&mut self, re: Regex) -> usize {
+    pub fn add_match(&mut self, re: &Regex) -> usize {
         let mut found_spans = re
             .find_iter(&self.text)
             .map(|m| char_span(&self.text, m.start()..m.end()))
@@ -118,7 +118,7 @@ mod tests {
         let mut r = Record::new("Вот тебе 2 яблочка");
         let regex = Regex::new("[0-9]+").unwrap();
 
-        assert_eq!(r.add_match(regex), 1);
+        assert_eq!(r.add_match(&regex), 1);
         assert_eq!(r.spans[0], 9..10);
     }
 }
