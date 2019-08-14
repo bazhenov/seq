@@ -30,6 +30,30 @@ impl Record {
 
         spans_found
     }
+
+    pub fn mask(&self, label: &str) -> String {
+        let mut result = String::new();
+        let mut prev_end = 0;
+
+        for s in &self.spans {
+            let span_start = byte_offset(&self.text, s.start);
+            if span_start > prev_end {
+                result.push_str(&self.text[prev_end..span_start]);
+            }
+            result.push_str(label);
+            prev_end = byte_offset(&self.text, s.end);
+        }
+
+        if prev_end < self.text.len() - 1 {
+            result.push_str(&self.text[prev_end..]);
+        }
+
+        result
+    }
+}
+
+fn byte_offset(text: &str, char_no: usize) -> usize {
+    text.char_indices().nth(char_no).unwrap().0
 }
 
 pub struct Records<R> {
@@ -120,5 +144,14 @@ mod tests {
 
         assert_eq!(r.add_match(&regex), 1);
         assert_eq!(r.spans[0], 9..10);
+    }
+
+    #[test]
+    fn build_template() {
+        let mut r = Record::new("2 cats have 2 tails");
+        r.add_match(&Regex::new("[0-9]").unwrap());
+
+        let result = r.mask("<DIGIT>");
+        assert_eq!(result, "<DIGIT> cats have <DIGIT> tails");
     }
 }

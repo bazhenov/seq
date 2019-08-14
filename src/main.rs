@@ -61,6 +61,15 @@ fn main() -> Result<()> {
                 fs::rename(output_file_name, input_file_name)?;
             }
         };
+    } else if let Some(matches) = matches.subcommand_matches("mask") {
+        let input_file_name = matches.value_of("INPUT").unwrap();
+        let input_file = File::open(input_file_name)?;
+
+        let records = Records::new(input_file);
+
+        let label = matches.value_of("LABEL").unwrap();
+
+        mask(records, label, stdout)?;
     }
 
     Ok(())
@@ -90,6 +99,12 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .arg_from_usage("[OUTPUT] -o --output=[FILE] 'output file'")
                 .arg_from_usage("<INPUT> 'input file'"),
         )
+        .subcommand(
+            SubCommand::with_name("mask")
+                .about("mask matches")
+                .arg_from_usage("<LABEL> -l --label=<LABEL> 'label for masking matches'")
+                .arg_from_usage("<INPUT> 'input file'"),
+        )
 }
 
 fn mark(records: impl Iterator<Item = Record>, regex: &Regex, mut out: impl Write) -> Result<()> {
@@ -97,6 +112,16 @@ fn mark(records: impl Iterator<Item = Record>, regex: &Regex, mut out: impl Writ
         r.add_match(regex);
         write_json(r, &mut out)?;
     }
+    Ok(())
+}
+
+// masking all the matches in records
+fn mask(records: impl Iterator<Item = Record>, label: &str, mut out: impl Write) -> Result<()> {
+    for record in records {
+        let masked_text = record.mask(label);
+        write_json(masked_text, &mut out)?;
+    }
+
     Ok(())
 }
 
