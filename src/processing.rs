@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Regex, Error};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Read};
 use std::ops::Range;
@@ -31,6 +31,18 @@ impl Record {
         spans_found
     }
 
+    pub fn add_match_str(&mut self, re: &str) -> Result<usize, Error> {
+        Ok(self.add_match(&Regex::new(&re)?))
+    }
+
+    /// Mask all spans in a text with given label.
+    /// 
+    /// For example:
+    /// ```
+    /// let r = Record::new("Hello world");
+    /// r.add_match_str("world");
+    /// assert_eq!(r.mask("<W>"), "Hello <W>");
+    /// ```
     pub fn mask(&self, label: &str) -> String {
         let mut result = String::new();
         let mut prev_end = 0;
@@ -140,9 +152,8 @@ mod tests {
     #[test]
     fn mark_records() {
         let mut r = Record::new("Вот тебе 2 яблочка");
-        let regex = Regex::new("[0-9]+").unwrap();
 
-        assert_eq!(r.add_match(&regex), 1);
+        assert_eq!(r.add_match_str("[0-9]+"), Ok(1));
         assert_eq!(r.spans[0], 9..10);
     }
 

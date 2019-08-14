@@ -1,6 +1,6 @@
 extern crate clap;
 extern crate regex;
-mod processing;
+pub mod processing;
 
 use clap::{App, SubCommand};
 use processing::{Record, Records};
