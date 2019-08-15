@@ -17,59 +17,67 @@ fn main() -> Result<()> {
     let stdout = stdout();
     let stdout = stdout.lock();
 
-    if let Some(matches) = matches.subcommand_matches("import") {
-        let input_file_name = matches.value_of("INPUT").unwrap();
-        let input_file = File::open(input_file_name)?;
-        let lines = BufReader::new(input_file).lines().filter_map(Result::ok);
+    match matches.subcommand() {
+        ("import", Some(matches)) => {
+            let input_file_name = matches.value_of("INPUT").unwrap();
+            let input_file = File::open(input_file_name)?;
+            let lines = BufReader::new(input_file).lines().filter_map(Result::ok);
 
-        if let Some(output_file_name) = matches.value_of("OUTPUT") {
-            let output_file = File::create(output_file_name)?;
-            import(lines, output_file)?;
-        } else {
-            import(lines, stdout)?;
-        }
-    } else if let Some(matches) = matches.subcommand_matches("print") {
-        let input_file_name = matches.value_of("INPUT").unwrap();
-        let file = File::open(input_file_name)?;
-
-        let records = Records::new(file);
-
-        let regex = matches.value_of("REGEX").unwrap();
-        let regex = Regex::new(regex).expect("Invalid regex");
-
-        print(records, &regex, stdout)?;
-    } else if let Some(matches) = matches.subcommand_matches("mark") {
-        let input_file_name = matches.value_of("INPUT").unwrap();
-        let input_file = File::open(input_file_name)?;
-
-        let records = Records::new(input_file);
-
-        let regex = matches.value_of("REGEX").unwrap();
-        let regex = Regex::new(regex).expect("Invalid regex");
-
-        match matches.value_of("OUTPUT") {
-            Some("-") => mark(records, &regex, stdout)?,
-
-            Some(output_file_name) => {
+            if let Some(output_file_name) = matches.value_of("OUTPUT") {
                 let output_file = File::create(output_file_name)?;
-                mark(records, &regex, output_file)?;
+                import(lines, output_file)?;
+            } else {
+                import(lines, stdout)?;
             }
-            _ => {
-                let output_file_name = format!(".{}.tmp", input_file_name);
-                let output_file = File::create(&output_file_name)?;
-                mark(records, &regex, output_file)?;
-                fs::rename(output_file_name, input_file_name)?;
-            }
-        };
-    } else if let Some(matches) = matches.subcommand_matches("mask") {
-        let input_file_name = matches.value_of("INPUT").unwrap();
-        let input_file = File::open(input_file_name)?;
+        }
+        ("print", Some(matches)) => {
+            let input_file_name = matches.value_of("INPUT").unwrap();
+            let file = File::open(input_file_name)?;
 
-        let records = Records::new(input_file);
+            let records = Records::new(file);
 
-        let label = matches.value_of("LABEL").unwrap();
+            let regex = matches.value_of("REGEX").unwrap();
+            let regex = Regex::new(regex).expect("Invalid regex");
 
-        mask(records, label, stdout)?;
+            print(records, &regex, stdout)?;
+        }
+        ("mark", Some(matches)) => {
+            let input_file_name = matches.value_of("INPUT").unwrap();
+            let input_file = File::open(input_file_name)?;
+
+            let records = Records::new(input_file);
+
+            let regex = matches.value_of("REGEX").unwrap();
+            let regex = Regex::new(regex).expect("Invalid regex");
+
+            match matches.value_of("OUTPUT") {
+                Some("-") => mark(records, &regex, stdout)?,
+
+                Some(output_file_name) => {
+                    let output_file = File::create(output_file_name)?;
+                    mark(records, &regex, output_file)?;
+                }
+                _ => {
+                    let output_file_name = format!(".{}.tmp", input_file_name);
+                    let output_file = File::create(&output_file_name)?;
+                    mark(records, &regex, output_file)?;
+                    fs::rename(output_file_name, input_file_name)?;
+                }
+            };
+        }
+        ("mask", Some(matches)) => {
+            let input_file_name = matches.value_of("INPUT").unwrap();
+            let input_file = File::open(input_file_name)?;
+
+            let records = Records::new(input_file);
+
+            let label = matches.value_of("LABEL").unwrap();
+
+            mask(records, label, stdout)?;
+        }
+        _ => {
+            println!("{}", matches.usage());
+        }
     }
 
     Ok(())
