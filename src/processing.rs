@@ -1,4 +1,4 @@
-use regex::{Regex, Error};
+use regex::{Error, Regex};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Read};
 use std::ops::Range;
@@ -19,10 +19,14 @@ impl Record {
         }
     }
 
+    /// Adds span to matches
+    ///
+    /// Matches added only for spans not covered by any other matches in record
     pub fn add_match(&mut self, re: &Regex) -> usize {
         let mut found_spans = re
             .find_iter(&self.text)
             .map(|m| char_span(&self.text, m.start()..m.end()))
+            .filter(|i| self.has_no_conflicting_spans(i))
             .collect::<Vec<_>>();
 
         let spans_found = found_spans.len();
@@ -31,12 +35,16 @@ impl Record {
         spans_found
     }
 
+    fn has_no_conflicting_spans(&self, s: &Range<usize>) -> bool {
+        !self.spans.iter().any(|i| does_range_overloaps(s, i))
+    }
+
     pub fn add_match_str(&mut self, re: &str) -> Result<usize, Error> {
         Ok(self.add_match(&Regex::new(&re)?))
     }
 
     /// Mask all spans in a text with given label.
-    /// 
+    ///
     /// For example:
     /// ```
     /// let r = Record::new("Hello world");
@@ -73,7 +81,11 @@ fn byte_offset(text: &str, char_no: usize) -> usize {
     } else if text.chars().count() == char_no {
         text.len()
     } else {
-        panic!("unable to find offset for char no {no} in string '{text}'", no = char_no, text = text);
+        panic!(
+            "unable to find offset for char no {no} in string '{text}'",
+            no = char_no,
+            text = text
+        );
     }
 }
 
@@ -117,6 +129,11 @@ fn char_span(string: &str, span: Span) -> Span {
     let char_end = char_start + string[start..end].chars().count();
 
     char_start..char_end
+}
+
+// Does two ranges overlaps
+fn does_range_overloaps<T: PartialOrd>(a: &Range<T>, b: &Range<T>) -> bool {
+    a.contains(&b.start) || b.contains(&a.start)
 }
 
 mod tests {
@@ -167,11 +184,34 @@ mod tests {
     }
 
     #[test]
+    fn skip_if_marks_overlaps() {
+        let mut r = Record::new("33 коровы");
+
+        assert_eq!(r.add_match_str("[0-9]"), Ok(2));
+        assert_eq!(r.add_match_str("[0-9]{2}"), Ok(0));
+    }
+
+    #[test]
     fn build_template() {
         let mut r = Record::new("2 cats have 2 tails 2");
         r.add_match(&Regex::new("[0-9]").unwrap());
 
         let result = r.mask("<DIGIT>");
         assert_eq!(result, "<DIGIT> cats have <DIGIT> tails <DIGIT>");
+    }
+
+    #[test]
+    fn range_intersect() {
+        assert_eq!(does_range_overloaps(&(0..11), &(5..12)), true);
+        assert_eq!(does_range_overloaps(&(5..12), &(0..11)), true);
+
+        assert_eq!(does_range_overloaps(&(4..11), &(1..12)), true);
+        assert_eq!(does_range_overloaps(&(1..12), &(4..11)), true);
+
+        assert_eq!(does_range_overloaps(&(0..11), &(11..12)), false);
+        assert_eq!(does_range_overloaps(&(11..12), &(0..11)), false);
+
+        assert_eq!(does_range_overloaps(&(0..11), &(12..13)), false);
+        assert_eq!(does_range_overloaps(&(12..13), &(0..11)), false);
     }
 }
