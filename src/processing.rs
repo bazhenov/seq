@@ -65,7 +65,16 @@ impl Record {
 }
 
 fn byte_offset(text: &str, char_no: usize) -> usize {
-    text.char_indices().nth(char_no).unwrap().0
+    // Looking for the nth character in a text
+    if let Some((offset, _)) = text.char_indices().nth(char_no) {
+        offset
+
+    // if char_no equals to the length of the string return the byte after the last one
+    } else if text.chars().count() == char_no {
+        text.len()
+    } else {
+        panic!("unable to find offset for char no {no} in string '{text}'", no = char_no, text = text);
+    }
 }
 
 pub struct Records<R> {
@@ -159,10 +168,10 @@ mod tests {
 
     #[test]
     fn build_template() {
-        let mut r = Record::new("2 cats have 2 tails");
+        let mut r = Record::new("2 cats have 2 tails 2");
         r.add_match(&Regex::new("[0-9]").unwrap());
 
         let result = r.mask("<DIGIT>");
-        assert_eq!(result, "<DIGIT> cats have <DIGIT> tails");
+        assert_eq!(result, "<DIGIT> cats have <DIGIT> tails <DIGIT>");
     }
 }
