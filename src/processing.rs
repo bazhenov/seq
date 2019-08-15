@@ -35,7 +35,7 @@ impl Record {
         spans_found
     }
 
-    fn has_no_conflicting_spans(&self, s: &Range<usize>) -> bool {
+    pub fn has_no_conflicting_spans(&self, s: &Range<usize>) -> bool {
         !self.spans.iter().any(|i| does_range_overloaps(s, i))
     }
 
@@ -122,7 +122,7 @@ impl<R: Read> Iterator for Records<R> {
 /// This is convinient method for converting byte span (for example from a regex search) to a charatcter
 /// span for a given string.
 /// Input span should be correct byte offsets for a given string
-fn char_span(string: &str, span: Span) -> Span {
+pub fn char_span(string: &str, span: Span) -> Span {
     let (start, end) = (span.start, span.end);
 
     let char_start = string[0..start].chars().count();

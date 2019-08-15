@@ -39,7 +39,9 @@ fn main() -> Result<()> {
             let regex = matches.value_of("REGEX").unwrap();
             let regex = Regex::new(regex).expect("Invalid regex");
 
-            print(records, &regex, stdout)?;
+            let only_new = matches.is_present("ONLY_NEW");
+
+            print(records, &regex, stdout, only_new)?;
         }
         ("mark", Some(matches)) => {
             let input_file_name = matches.value_of("INPUT").unwrap();
@@ -97,7 +99,8 @@ fn app<'a, 'b>() -> App<'a, 'b> {
         .subcommand(
             SubCommand::with_name("print")
                 .about("print matches")
-                .arg_from_usage("[REGEX] -r --regex=[REGEX] 'regular expression'")
+                .arg_from_usage("<REGEX> -r --regex=[REGEX] 'regular expression'")
+                .arg_from_usage("[ONLY_NEW] -n --new 'print only new matches'")
                 .arg_from_usage("<INPUT> 'file to use'"),
         )
         .subcommand(
@@ -134,12 +137,20 @@ fn mask(records: impl Iterator<Item = Record>, label: &str, mut out: impl Write)
 }
 
 /// iterate over records and write to output only matches of given regex
-fn print(records: impl Iterator<Item = Record>, regex: &Regex, mut out: impl Write) -> Result<()> {
+fn print(records: impl Iterator<Item = Record>, regex: &Regex, mut out: impl Write, only_new: bool) -> Result<()> {
     for record in records {
-        let text = record.text;
+        let text = &record.text;
 
         for m in regex.find_iter(&text) {
-            writeln!(out, "{}", m.as_str())?;
+            if only_new {
+                let span = processing::char_span(&text, m.start()..m.end());
+                if record.has_no_conflicting_spans(&span) {
+                    writeln!(out, "{}", m.as_str())?;
+                }
+            } else {
+                writeln!(out, "{}", m.as_str())?;
+            }
+            
         }
     }
 
